@@ -26,6 +26,13 @@ export PKG_CONFIG_PATH
 $ pkg-config --cflags opencv
 $ pkg-config --libs opencv
 ```
+Next, add OpenCV library location to make linking work.
+
+4. Create a `opencv.conf` file at `/etc/ld.so.conf.d/`.
+5. Add the location of your OpenCV library to the `opencv.conf` file (probably `/usr/local/lib`)
+6. Run `sudo ldconfig -v`
+
+You should now be able to run any OpenCV executable.
 
 ## Compile OpenCV code
 To compile any `.cpp` OpenCV program, use the `Makefile` like:
