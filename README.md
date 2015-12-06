@@ -28,6 +28,6 @@ $ pkg-config --libs opencv
 ```
 
 ## Compile OpenCV code
-Compile any `.cpp` OpenCV program use the `Makefile` like:
+To compile any `.cpp` OpenCV program, use the `Makefile` like:
 `$ make <program_name_without_extension>`
 
