@@ -70,7 +70,7 @@ int main(int argc, char **argv)
             MPI_Send(img.data, size[0]*size[1]*3, MPI_CHAR, getRecvDest(), 1, MPI_COMM_WORLD);
             MPI_Recv(dst.data, size[0]*size[1]*3, MPI_CHAR, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, &status);
             char buffer[100];
-            sprintf(buffer, "c_%i", i);  
+            sprintf(buffer, "c_%i.png", i);  
             cv::imwrite(buffer, dst);
         }
     }
