@@ -141,7 +141,55 @@ int getRecvDest()
 
 void partition(cv::Mat img, int num_chunks, cv::Mat *chunks)
 {
-    // TODO actually partition image
-    chunks = &img;
+    chunks = new cv::Mat[num_chunks];
+    int total_rows = img.rows;
+    int total_columns = img.cols;
+    int channels = img.channels();
+    int rows_per_chunk = total_rows / (num_chunks / 2);
+    int rows_remainder = total_rows % (num_chunks / 2);
+    //  need to rethink this!
+    int chunks_per_column = 2;
+    int chunks_per_column_remainder = num_chunks % 2;
+  
+    int row = 0;
+    int column = 0;
+    int chunk = 0;
+
+    while (row != total_rows)
+    {
+        int rows = rows_per_chunk;
+        if (rows_remainder > 0)
+        {
+            ++rows;
+            --rows_remainder;
+        }
+
+        int num_columns = chunks_per_column;
+        if (chunks_per_column_remainder > 0)
+        {
+            ++num_columns;
+            --chunks_per_column_remainder;
+        }
+
+        int columns_per_chunk = total_columns / num_columns;
+        int columns_per_chunk_remainder = total_columns % num_columns;
+
+        while (column != total_columns)
+        {
+            int columns = columns_per_chunk;
+            if (columns_per_chunk_remainder > 0)
+            {
+                ++columns;
+                --columns_per_chunk_remainder;
+            }
+
+            chunks[chunk] = img(cv::Range(row, row + rows), cv::Range(column, column + columns));
+            column += columns;
+            chunk++;
+        }
+
+        row += rows;
+        column = 0;
+    }
 }
 
