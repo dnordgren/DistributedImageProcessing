@@ -160,15 +160,16 @@ int getRecvDest()
 void partition(cv::Mat img, int num_chunks, cv::Mat *chunks)
 {
     chunks = new cv::Mat[num_chunks];
+
     int total_rows = img.rows;
     int total_columns = img.cols;
-    int channels = img.channels();
-    int rows_per_chunk = total_rows / (num_chunks / 2);
-    int rows_remainder = total_rows % (num_chunks / 2);
-    //  need to rethink this!
-    int chunks_per_column = 2;
-    int chunks_per_column_remainder = num_chunks % 2;
-  
+    int sqrt_floor = (int) floor(sqrt(num_chunks));
+    int rows_per_chunk = total_rows / sqrt_floor;
+    int rows_remainder = total_rows % sqrt_floor;
+    int chunks_per_column = total_rows / rows_per_chunk;
+    int chunks_per_row = num_chunks / chunks_per_column;
+    int chunks_per_row_remainder = num_chunks % chunks_per_column;  
+    
     int row = 0;
     int column = 0;
     int chunk = 0;
