@@ -50,27 +50,36 @@ int main(int argc, char **argv)
         cv::Mat src = cv::imread(filepath, 1);
 
         // partition the source image into chunks
-        cv::Mat *chunks;
+        cv::Mat chunks[num_chunks];
         partition(src, num_chunks, chunks);
+        std::cout << "head: partitioned the output file\n";
         
         for (int i = 0; i < num_chunks; i++)
         {
+            std::cout << "head: looping through chunks\n";
             img = chunks[i];
-            // during the first iteration, send the size of the image to process 
-            if (i == 0)
-            {
-                cv::Size s = img.size();
-                size[0] = s.height;
-                size[1] = s.width;
-                MPI_Send(size, 2, MPI_INT, 1, 0, MPI_COMM_WORLD);
-                // initialize the output image
-                dst.create(size[0], size[1], CV_8UC3);
-            }
+            std::cout << "head: grabbed a chunk\n";
+
+            int dest = getRecvDest();
+            std::cout << "head: about to send to node " << dest << "\n";
+            // send the size of the image to process 
+            cv::Size s = img.size();
+            size[0] = s.height;
+            size[1] = s.width;
+            std::cout << "head: sending chunk " << i << " size\n";
+            MPI_Send(size, 2, MPI_INT, dest, 0, MPI_COMM_WORLD);
+            // initialize the output image
+            dst.create(size[0], size[1], CV_8UC3);
+
             // send the image data to other processes
-            MPI_Send(img.data, size[0]*size[1]*3, MPI_CHAR, getRecvDest(), 1, MPI_COMM_WORLD);
-            MPI_Recv(dst.data, size[0]*size[1]*3, MPI_CHAR, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, &status);
+            std::cout << "head: sending chunk " << i << " data\n";
+            MPI_Send(img.data, size[0]*size[1]*3, MPI_CHAR, dest, 1, MPI_COMM_WORLD);
+            std::cout << "head: receiving chunks\n";
+            MPI_Recv(dst.data, size[0]*size[1]*3, MPI_CHAR, MPI_ANY_SOURCE, 2, MPI_COMM_WORLD, &status);
+            std::cout << "head: received chunk from node " << status.MPI_SOURCE << "\n";
             char buffer[100];
-            sprintf(buffer, "c_%i.png", i);  
+            sprintf(buffer, "c_%i.png", i);
+            std::cout << "head: writing received image\n";
             cv::imwrite(buffer, dst);
         }
     }
@@ -78,14 +87,16 @@ int main(int argc, char **argv)
     {
         for (int i = 0; i < num_chunks; i++)
         {
-            // during the first iteration, initialize the image to process
-            if (i == 0)
-            {
-                MPI_Recv(size, 2, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
-                img.create(size[0], size[1], CV_8UC3);
-            }
+            // initialize the image to process
+            std::cout << "worker: about to receive chunk size\n";
+            MPI_Recv(size, 2, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
+            std::cout << "worker: received chunk " << i << "size\n";
+            img.create(size[0], size[1], CV_8UC3);
+
             // receive the image data to process
+            std::cout << "worker: about to receive chunk data\n";
             MPI_Recv(img.data, size[0]*size[1]*3, MPI_CHAR, 0, 1, MPI_COMM_WORLD, &status);
+            std::cout << "worker: received chunk " << i << "data\n";
 
             // determine the correct operation to run based on the input flag
             int op_type = atoi(argv[3]);
@@ -93,10 +104,13 @@ int main(int argc, char **argv)
             operation = (op_type == 0) ? &noBorderOp : &borderOp;
 
             // run the operation on the image
+            std::cout << "worker: running operation on image\n";
             operation(img, dst);
 
             // send the output back to head
-            MPI_Send(dst.data, size[0]*size[1]*3, MPI_CHAR, 0, 1, MPI_COMM_WORLD);
+            std::cout << "worker: about to send processed image back to head\n";
+            MPI_Send(dst.data, size[0]*size[1]*3, MPI_CHAR, 0, 2, MPI_COMM_WORLD);
+            std::cout << "worker: send processed image back to head\n";
         }
     }
 
@@ -106,12 +120,15 @@ int main(int argc, char **argv)
 
 void noBorderOp(cv::Mat src, cv::Mat dst)
 {
+    std::cout << "op: grayscaling image...\n";
     // Convert the input image to grayscale
     cv::cvtColor(src, dst, CV_BGR2GRAY);
+    std::cout << "op: grayscaling complete\n";
 }
 
 void borderOp(cv::Mat src, cv::Mat dst)
 {
+    std::cout << "op: masking image...\n";
     // Declare arguments
     cv::Mat kernel;
     cv::Point anchor;
@@ -128,6 +145,7 @@ void borderOp(cv::Mat src, cv::Mat dst)
 
     // Run a 2d filter on the src image
     cv::filter2D(src, dst, ddepth , kernel, anchor, delta, cv::BORDER_DEFAULT);
+    std::cout << "op: masking complete\n";
 }
 
 int getRecvDest()
@@ -183,7 +201,7 @@ void partition(cv::Mat img, int num_chunks, cv::Mat *chunks)
                 --columns_per_chunk_remainder;
             }
 
-            chunks[chunk] = img(cv::Range(row, row + rows), cv::Range(column, column + columns));
+            chunks[chunk] = img(cv::Range(row, row + rows), cv::Range(column, column + columns)).clone();
             column += columns;
             chunk++;
         }
