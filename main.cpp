@@ -16,7 +16,7 @@ int getRecvDest();
 /**
  * Paritions img into num_chunks subimages.
  */
-void partition(cv::Mat img, int num_chunks, cv::Mat *chunks);
+cv::Mat *partition(cv::Mat img, int num_chunks);
 
 int current_process = 1;
 int num_processes = 0;
@@ -50,8 +50,7 @@ int main(int argc, char **argv)
         cv::Mat src = cv::imread(filepath, 1);
 
         // partition the source image into chunks
-        cv::Mat chunks[num_chunks];
-        partition(src, num_chunks, chunks);
+        cv::Mat *chunks = partition(src, num_chunks);
         std::cout << "head: partitioned the output file\n";
         
         for (int i = 0; i < num_chunks; i++)
@@ -157,9 +156,9 @@ int getRecvDest()
     return current_process;
 }
 
-void partition(cv::Mat img, int num_chunks, cv::Mat *chunks)
+cv::Mat *partition(cv::Mat img, int num_chunks)
 {
-    chunks = new cv::Mat[num_chunks];
+    cv::Mat *chunks = new cv::Mat[num_chunks];
 
     int total_rows = img.rows;
     int total_columns = img.cols;
@@ -210,5 +209,7 @@ void partition(cv::Mat img, int num_chunks, cv::Mat *chunks)
         row += rows;
         column = 0;
     }
+    
+    return chunks;
 }
 
