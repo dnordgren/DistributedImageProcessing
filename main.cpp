@@ -139,7 +139,7 @@ void borderOp(cv::Mat src, cv::Mat dst)
     anchor = cv::Point( -1, -1 );
     delta = 0;
     ddepth = -1;
-    kernel_size = 3;
+    kernel_size = 9;
     kernel = cv::Mat::ones( kernel_size, kernel_size, CV_32F )/ (float)(kernel_size*kernel_size);
 
     // Run a 2d filter on the src image
