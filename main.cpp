@@ -92,6 +92,7 @@ int main(int argc, char **argv)
             MPI_Recv(size, 2, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
             std::cout << "worker: received chunk " << i << " size\n";
             img.create(size[0], size[1], CV_8UC3);
+            dst.create(size[0], size[1], CV_8UC3);
 
             // receive the image data to process
             MPI_Recv(img.data, size[0]*size[1]*3, MPI_CHAR, 0, 1, MPI_COMM_WORLD, &status);
@@ -182,11 +183,11 @@ void partition(cv::Mat img, int num_chunks, cv::Mat *chunks)
             --rows_remainder;
         }
 
-        int num_columns = chunks_per_column;
-        if (chunks_per_column_remainder > 0)
+        int num_columns = chunks_per_row;
+        if (chunks_per_row_remainder > 0)
         {
             ++num_columns;
-            --chunks_per_column_remainder;
+            --chunks_per_row_remainder;
         }
 
         int columns_per_chunk = total_columns / num_columns;
