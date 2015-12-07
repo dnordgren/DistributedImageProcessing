@@ -56,7 +56,6 @@ int main(int argc, char **argv)
         
         for (int i = 0; i < num_chunks; i++)
         {
-            std::cout << "head: looping through chunks\n";
             img = chunks[i];
             std::cout << "head: grabbed a chunk\n";
 
@@ -85,18 +84,18 @@ int main(int argc, char **argv)
     }
     else
     {
-        for (int i = 0; i < num_chunks; i++)
+        // TODO make not hard-coded
+        int num_chunks_will_process = num_chunks / (num_processes-1);
+        for (int i = 0; i < num_chunks_will_process; i++)
         {
             // initialize the image to process
-            std::cout << "worker: about to receive chunk size\n";
             MPI_Recv(size, 2, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
-            std::cout << "worker: received chunk " << i << "size\n";
+            std::cout << "worker: received chunk " << i << " size\n";
             img.create(size[0], size[1], CV_8UC3);
 
             // receive the image data to process
-            std::cout << "worker: about to receive chunk data\n";
             MPI_Recv(img.data, size[0]*size[1]*3, MPI_CHAR, 0, 1, MPI_COMM_WORLD, &status);
-            std::cout << "worker: received chunk " << i << "data\n";
+            std::cout << "worker: received chunk " << i << " data\n";
 
             // determine the correct operation to run based on the input flag
             int op_type = atoi(argv[3]);
